@@ -126,6 +126,8 @@ H5RS__xstrdup(H5RS_str_t *rs, const char *s)
             HGOTO_ERROR(H5E_RS, H5E_CANTALLOC, FAIL, "memory allocation failed");
         if (len)
             H5MM_memcpy(rs->s, s, len);
+        else
+            rs->s[0] = 0;
         rs->end  = rs->s + len;
         *rs->end = '\0';
         rs->len  = len;
