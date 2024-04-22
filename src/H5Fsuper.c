@@ -632,6 +632,7 @@ H5F__super_read(H5F_t *f, H5P_genplist_t *fa_plist, bool initial_read)
         /* extend EOA so we can read at least the fixed sized
          * portion of the driver info block
          */
+        printf("when set_eoa lf pointer is %p\n", f->shared->lf);
         if (H5FD_set_eoa(f->shared->lf, H5FD_MEM_SUPER, sblock->driver_addr + H5F_DRVINFOBLOCK_HDR_SIZE) <
             0) /* will extend eoa later if required */
             HGOTO_ERROR(H5E_FILE, H5E_CANTINIT, FAIL, "set end of space allocation request failed");
