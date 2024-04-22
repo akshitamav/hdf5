@@ -3155,6 +3155,7 @@ H5C_protect(H5F_t *f, const H5C_class_t *type, haddr_t addr, void *udata, unsign
                 have_write_permitted = true;
             } /* end else */
 
+            printf("entry size is %ld but max entry size is %ld\n", entry_ptr->size, H5C_MAX_ENTRY_SIZE);
             assert(entry_ptr->size <= H5C_MAX_ENTRY_SIZE);
             space_needed = entry_ptr->size;
             if (space_needed > cache_ptr->max_cache_size)
