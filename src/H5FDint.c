@@ -2393,6 +2393,7 @@ H5FD_set_eoa(H5FD_t *file, H5FD_mem_t type, haddr_t addr)
     assert(file && file->cls);
 
     assert(H5_addr_defined(addr));
+    assert(file->maxaddr);
     assert(addr <= file->maxaddr);
 
     /* Dispatch to driver, convert to absolute address */
