@@ -118,19 +118,24 @@ H5RS__xstrdup(H5RS_str_t *rs, const char *s)
 
         /* Determine size of buffer to allocate */
         rs->max = H5RS_ALLOC_SIZE;
-        while ((len + 1) > rs->max)
+        while ((len + 1) > rs->max) {
             rs->max *= 2;
+        }
 
         /* Allocate the underlying string */
-        if (NULL == (rs->s = (char *)H5FL_BLK_MALLOC(str_buf, rs->max)))
+        if (NULL == (rs->s = (char *)H5FL_BLK_MALLOC(str_buf, rs->max))) {
             HGOTO_ERROR(H5E_RS, H5E_CANTALLOC, FAIL, "memory allocation failed");
-        if (len)
+        }
+
+        memset(rs->s, 0, len + 1);
+
+        if (len) {
             H5MM_memcpy(rs->s, s, len);
-        else
-            rs->s[0] = 0;
-        rs->end  = rs->s + len;
-        *rs->end = '\0';
+        }
+
         rs->len  = len;
+        rs->end  = &rs->s[len];
+        *rs->end = '\0';
     } /* end if */
     else {
         /* Free previous string, if one */
