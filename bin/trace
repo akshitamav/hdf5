@@ -121,6 +121,7 @@ $Source = "";
                "H5M_iterate_t"              => 'MI',
                "H5FD_mem_t"                 => "Mt",
                "off_t"                      => "o",
+               "HDoff_t"                    => "Ho",
                "H5O_iterate1_t"             => "Oi",
                "H5O_iterate2_t"             => "OI",
                "H5O_mcdt_search_cb_t"       => "Os",
@@ -307,14 +308,12 @@ sub rewrite_func ($$$$$) {
         # First remove:
         #   * /*in*/, /*out*/, /*in_out*/, and /*in,out*/ comments
         #   * preprocessor lines that start with #
-        #   * H5FL_TRACKING_PARAMS macros (free list code only)
         #
         # then split the function arguments on commas
         $args =~ s/\/\*\s*in\s*\*\///g;  # Get rid of /*in*/
         $args =~ s/\/\*\s*out\s*\*\///g; # Get rid of /*out*/
         $args =~ s/\/\*\s*in,\s*out\s*\*\///g; # Get rid of /*in,out*/
         $args =~ s/\/\*\s*in_out\s*\*\///g; # Get rid of /*in_out*/
-        $args =~ s/H5FL_TRACK_PARAMS//g; # Remove free list macro
         $args =~ s/\n#.*?\n/\n/g;        # Remove lines beginning with '#'
         my @args = split /,[\s\n]*/, $args;
         my $argno = 0;

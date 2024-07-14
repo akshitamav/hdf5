@@ -1,6 +1,6 @@
 name: hdf5 dev tarball
 
-# Controls when the action will run. Triggers the workflow on a schedule
+# Triggers the workflow on a call from another workflow
 on:
   workflow_call:
     inputs:
@@ -34,8 +34,6 @@ on:
 permissions:
   contents: read
 
-# A workflow run is made up of one or more jobs that can run sequentially or
-# in parallel
 jobs:
   check_commits:
     name: Check for recent commits
@@ -87,7 +85,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Get Sources
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.1.7
         with:
           path: hdfsrc
           ref: '${{needs.check_commits.outputs.branch_ref }}'
@@ -144,6 +142,14 @@ jobs:
           mv hdf5-${{ steps.version.outputs.SOURCE_TAG }}.zip ${{ inputs.use_tag }}.zip
         shell: bash
 
+      - name: Copy the release file source to a non-versioned file name
+        id: cp-to-non-versioned
+        if: ${{ (inputs.use_environ == 'release') }}
+        run: |
+          cp ${{ inputs.use_tag }}.tar.gz hdf5.tar.gz
+          cp ${{ inputs.use_tag }}.zip hdf5.zip
+        shell: bash
+
       - name: List files in the repository
         run: |
               ls -l ${{ github.workspace }}
@@ -162,6 +168,22 @@ jobs:
         with:
               name: zip-tarball
               path: ${{ steps.set-file-base.outputs.FILE_BASE }}.zip
+              if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
+
+      - name: Save tgz-tarball-nover
+        if: ${{ (inputs.use_environ == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+              name: tgz-tarball-nover
+              path: hdf5.tar.gz
+              if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
+
+      - name: Save zip-tarball-nover
+        if: ${{ (inputs.use_environ == 'release') }}
+        uses: actions/upload-artifact@v4
+        with:
+              name: zip-tarball-nover
+              path: hdf5.zip
               if-no-files-found: error # 'warn' or 'ignore' are also available, defaults to `warn`
 
       - name: Save NEWSLETTER

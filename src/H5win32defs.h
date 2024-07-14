@@ -20,17 +20,10 @@
 
 #ifdef H5_HAVE_WIN32_API
 
-/* off_t exists on Windows, but is always a 32-bit long, even on 64-bit Windows,
- * so we define HDoff_t to be __int64, which is the type of the st_size field
- * of the _stati64 struct and what is returned by _ftelli64().
- */
-#define HDoff_t __int64
-
-/* __int64 is the correct type for the st_size field of the _stati64 struct.
- * MSDN isn't very clear about this.
+/* Win32 platform-independent definition for struct stat. For POSIX, see
+ * H5private.h.
  */
 typedef struct _stati64 h5_stat_t;
-typedef __int64         h5_stat_size_t;
 
 #ifdef H5_HAVE_VISUAL_STUDIO
 struct timezone {
@@ -57,7 +50,7 @@ struct timezone {
  * MinGW and the newer, conforming MSVC preprocessor do not exhibit this
  * behavior.
  */
-#if (defined(_MSC_VER) && !defined(_MSVC_TRADITIONAL)) || _MSVC_TRADITIONAL
+#if (defined(_MSC_VER) && !defined(_MSVC_TRADITIONAL)) || defined(_MSVC_TRADITIONAL)
 /* Using the MSVC traditional preprocessor */
 #define HDopen(S, F, ...) Wopen(S, F, __VA_ARGS__)
 #else

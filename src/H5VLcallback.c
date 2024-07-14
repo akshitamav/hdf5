@@ -739,7 +739,10 @@ done:
 /*---------------------------------------------------------------------------
  * Function:    H5VLget_wrap_ctx
  *
- * Purpose:     Get a VOL connector's object wrapping context
+ * Purpose:     Get a VOL connector's object wrapping context. The output
+ *              wrap context is stored in memory allocated by the VOL callback
+ *              under *wrap_ctx and must be freed by the caller through
+ *              H5VLfree_wrap_ctx().
  *
  * Return:      Success:    Non-negative
  *              Failure:    Negative
@@ -2025,7 +2028,7 @@ done:
 } /* end H5VL__dataset_read() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dataset_read_direct
+ * Function:    H5VL_dataset_read
  *
  * Purpose:     Reads data from dataset through the VOL.  This is like
  *              H5VL_dataset_read, but takes an array of void * for the
@@ -2039,8 +2042,8 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5VL_dataset_read_direct(size_t count, void *obj[], H5VL_t *connector, hid_t mem_type_id[],
-                         hid_t mem_space_id[], hid_t file_space_id[], hid_t dxpl_id, void *buf[], void **req)
+H5VL_dataset_read(size_t count, void *obj[], H5VL_t *connector, hid_t mem_type_id[], hid_t mem_space_id[],
+                  hid_t file_space_id[], hid_t dxpl_id, void *buf[], void **req)
 {
     bool          vol_wrapper_set = false; /* Whether the VOL object wrapping context was set up */
     H5VL_object_t tmp_vol_obj;             /* Temporary VOL object for setting VOL wrapper */
@@ -2068,70 +2071,6 @@ done:
     /* Reset object wrapping info in API context */
     if (vol_wrapper_set && H5VL_reset_vol_wrapper() < 0)
         HDONE_ERROR(H5E_VOL, H5E_CANTRESET, FAIL, "can't reset VOL wrapper info");
-
-    FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dataset_read_direct() */
-
-/*-------------------------------------------------------------------------
- * Function:	H5VL_dataset_read
- *
- * Purpose:	Reads data from dataset through the VOL
- *
- * Return:      Success:    Non-negative
- *              Failure:    Negative
- *
- *-------------------------------------------------------------------------
- */
-herr_t
-H5VL_dataset_read(size_t count, const H5VL_object_t *vol_obj[], hid_t mem_type_id[], hid_t mem_space_id[],
-                  hid_t file_space_id[], hid_t dxpl_id, void *buf[], void **req)
-{
-    bool   vol_wrapper_set = false; /* Whether the VOL object wrapping context was set up */
-    void  *obj_local;               /* Local buffer for obj */
-    void **obj = &obj_local;        /* Array of object pointers */
-    size_t i;                       /* Local index variable */
-    herr_t ret_value = SUCCEED;     /* Return value */
-
-    FUNC_ENTER_NOAPI(FAIL)
-
-    assert(vol_obj);
-    assert(vol_obj[0]);
-
-    /* Set wrapper info in API context */
-    if (H5VL_set_vol_wrapper(vol_obj[0]) < 0)
-        HGOTO_ERROR(H5E_VOL, H5E_CANTSET, FAIL, "can't set VOL wrapper info");
-    vol_wrapper_set = true;
-
-    /* Allocate obj array if necessary */
-    if (count > 1)
-        if (NULL == (obj = (void **)H5MM_malloc(count * sizeof(void *))))
-            HGOTO_ERROR(H5E_VOL, H5E_CANTALLOC, FAIL, "can't allocate space for object array");
-
-    /* Build obj array */
-    for (i = 0; i < count; i++) {
-        /* Get the object */
-        obj[i] = vol_obj[i]->data;
-
-        /* Make sure the class matches */
-        if (vol_obj[i]->connector->cls->value != vol_obj[0]->connector->cls->value)
-            HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL,
-                        "datasets are accessed through different VOL connectors and can't be used in the "
-                        "same I/O call");
-    }
-
-    /* Call the corresponding internal VOL routine */
-    if (H5VL__dataset_read(count, obj, vol_obj[0]->connector->cls, mem_type_id, mem_space_id, file_space_id,
-                           dxpl_id, buf, req) < 0)
-        HGOTO_ERROR(H5E_VOL, H5E_READERROR, FAIL, "dataset read failed");
-
-done:
-    /* Reset object wrapping info in API context */
-    if (vol_wrapper_set && H5VL_reset_vol_wrapper() < 0)
-        HDONE_ERROR(H5E_VOL, H5E_CANTRESET, FAIL, "can't reset VOL wrapper info");
-
-    /* Free memory */
-    if (obj != &obj_local)
-        H5MM_free(obj);
 
     FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5VL_dataset_read() */
@@ -2212,7 +2151,7 @@ done:
 } /* end H5VL__dataset_write() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dataset_write_direct
+ * Function:    H5VL_dataset_write
  *
  * Purpose:     Writes data from dataset through the VOL.  This is like
  *              H5VL_dataset_write, but takes an array of void * for the
@@ -2226,9 +2165,8 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5VL_dataset_write_direct(size_t count, void *obj[], H5VL_t *connector, hid_t mem_type_id[],
-                          hid_t mem_space_id[], hid_t file_space_id[], hid_t dxpl_id, const void *buf[],
-                          void **req)
+H5VL_dataset_write(size_t count, void *obj[], H5VL_t *connector, hid_t mem_type_id[], hid_t mem_space_id[],
+                   hid_t file_space_id[], hid_t dxpl_id, const void *buf[], void **req)
 {
     bool          vol_wrapper_set = false; /* Whether the VOL object wrapping context was set up */
     H5VL_object_t tmp_vol_obj;             /* Temporary VOL object for setting VOL wrapper */
@@ -2256,70 +2194,6 @@ done:
     /* Reset object wrapping info in API context */
     if (vol_wrapper_set && H5VL_reset_vol_wrapper() < 0)
         HDONE_ERROR(H5E_VOL, H5E_CANTRESET, FAIL, "can't reset VOL wrapper info");
-
-    FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dataset_write_direct() */
-
-/*-------------------------------------------------------------------------
- * Function:	H5VL_dataset_write
- *
- * Purpose:	Writes data from dataset through the VOL
- *
- * Return:      Success:    Non-negative
- *              Failure:    Negative
- *
- *-------------------------------------------------------------------------
- */
-herr_t
-H5VL_dataset_write(size_t count, const H5VL_object_t *vol_obj[], hid_t mem_type_id[], hid_t mem_space_id[],
-                   hid_t file_space_id[], hid_t dxpl_id, const void *buf[], void **req)
-{
-    bool   vol_wrapper_set = false; /* Whether the VOL object wrapping context was set up */
-    void  *obj_local;               /* Local buffer for obj */
-    void **obj = &obj_local;        /* Array of object pointers */
-    size_t i;                       /* Local index variable */
-    herr_t ret_value = SUCCEED;     /* Return value */
-
-    FUNC_ENTER_NOAPI(FAIL)
-
-    assert(vol_obj);
-    assert(vol_obj[0]);
-
-    /* Set wrapper info in API context */
-    if (H5VL_set_vol_wrapper(vol_obj[0]) < 0)
-        HGOTO_ERROR(H5E_VOL, H5E_CANTSET, FAIL, "can't set VOL wrapper info");
-    vol_wrapper_set = true;
-
-    /* Allocate obj array if necessary */
-    if (count > 1)
-        if (NULL == (obj = (void **)H5MM_malloc(count * sizeof(void *))))
-            HGOTO_ERROR(H5E_VOL, H5E_CANTALLOC, FAIL, "can't allocate space for object array");
-
-    /* Build obj array */
-    for (i = 0; i < count; i++) {
-        /* Get the object */
-        obj[i] = vol_obj[i]->data;
-
-        /* Make sure the class matches */
-        if (vol_obj[i]->connector->cls->value != vol_obj[0]->connector->cls->value)
-            HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL,
-                        "datasets are accessed through different VOL connectors and can't be used in the "
-                        "same I/O call");
-    }
-
-    /* Call the corresponding internal VOL routine */
-    if (H5VL__dataset_write(count, obj, vol_obj[0]->connector->cls, mem_type_id, mem_space_id, file_space_id,
-                            dxpl_id, buf, req) < 0)
-        HGOTO_ERROR(H5E_VOL, H5E_WRITEERROR, FAIL, "dataset write failed");
-
-done:
-    /* Reset object wrapping info in API context */
-    if (vol_wrapper_set && H5VL_reset_vol_wrapper() < 0)
-        HDONE_ERROR(H5E_VOL, H5E_CANTRESET, FAIL, "can't reset VOL wrapper info");
-
-    /* Free memory */
-    if (obj != &obj_local)
-        H5MM_free(obj);
 
     FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5VL_dataset_write() */
@@ -3659,11 +3533,9 @@ H5VL__file_open_find_connector_cb(H5PL_type_t plugin_type, const void *plugin_in
     H5P_genplist_t                  *fapl_plist;
     H5P_genplist_t                  *fapl_plist_copy;
     bool                             is_accessible = false; /* Whether file is accessible */
-    ssize_t                          num_errors    = 0;
-    herr_t                           status;
-    hid_t                            connector_id = H5I_INVALID_HID;
-    hid_t                            fapl_id      = H5I_INVALID_HID;
-    herr_t                           ret_value    = H5_ITER_CONT;
+    hid_t                            connector_id  = H5I_INVALID_HID;
+    hid_t                            fapl_id       = H5I_INVALID_HID;
+    herr_t                           ret_value     = H5_ITER_CONT;
 
     FUNC_ENTER_PACKAGE
 
@@ -3698,30 +3570,10 @@ H5VL__file_open_find_connector_cb(H5PL_type_t plugin_type, const void *plugin_in
     vol_cb_args.args.is_accessible.fapl_id    = fapl_id;
     vol_cb_args.args.is_accessible.accessible = &is_accessible;
 
-    /* Store current error stack size */
-    if ((num_errors = H5Eget_num(H5E_DEFAULT)) < 0)
-        HGOTO_ERROR(H5E_ERROR, H5E_CANTGET, H5_ITER_ERROR, "can't get current error stack size");
+    if (H5VL_file_specific(NULL, &vol_cb_args, H5P_DATASET_XFER_DEFAULT, H5_REQUEST_NULL) < 0)
+        HGOTO_ERROR(H5E_FILE, H5E_CANTGET, H5_ITER_ERROR, "error when checking for accessible HDF5 file");
 
-    /* Check if file is accessible with given VOL connector */
-    H5E_BEGIN_TRY
-    {
-        status = H5VL_file_specific(NULL, &vol_cb_args, H5P_DATASET_XFER_DEFAULT, H5_REQUEST_NULL);
-    }
-    H5E_END_TRY
-
-    if (status < 0) {
-        ssize_t new_num_errors = 0;
-
-        /* Pop any errors generated by the above call */
-        if ((new_num_errors = H5Eget_num(H5E_DEFAULT)) < 0)
-            HGOTO_ERROR(H5E_ERROR, H5E_CANTGET, H5_ITER_ERROR, "can't get current error stack size");
-        if (new_num_errors > num_errors) {
-            new_num_errors -= num_errors;
-            if (H5Epop(H5E_DEFAULT, (size_t)new_num_errors) < 0)
-                HGOTO_ERROR(H5E_ERROR, H5E_CANTRELEASE, H5_ITER_ERROR, "can't sanitize error stack");
-        }
-    }
-    else if (status == SUCCEED && is_accessible) {
+    if (is_accessible) {
         /* If the file was accessible with the current VOL connector, return
          * the FAPL with that VOL connector set on it.
          */
@@ -3806,7 +3658,7 @@ H5VL_file_open(H5VL_connector_prop_t *connector_prop, const char *name, unsigned
                  * Otherwise, if no VOL connectors are available, throw
                  * error from original file open failure.
                  */
-                H5E_clear_stack(NULL);
+                H5E_clear_stack();
 
                 if (NULL == (ret_value = H5VL__file_open(find_connector_ud.cls, name, flags,
                                                          find_connector_ud.fapl_id, dxpl_id, req)))
