@@ -2391,7 +2391,7 @@ H5FD_set_eoa(H5FD_t *file, H5FD_mem_t type, haddr_t addr)
     FUNC_ENTER_NOAPI(FAIL)
 
     assert(file && file->cls);
-    //assert(file->shared->lf);
+    // assert(file->shared->lf);
 
     assert(H5_addr_defined(addr));
     assert(file->maxaddr);

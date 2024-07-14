@@ -321,7 +321,6 @@ H5F__super_read(H5F_t *f, H5P_genplist_t *fa_plist, bool initial_read)
     herr_t ret_value = SUCCEED; /* Return value */
 
     FUNC_ENTER_PACKAGE_TAG(H5AC__SUPERBLOCK_TAG)
-        
 
     printf("when starts lf pointer is %p\n", f->shared->lf);
     /* initialize the drvinfo to NULL -- we will overwrite this if there
